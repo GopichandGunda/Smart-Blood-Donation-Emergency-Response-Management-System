@@ -6,7 +6,7 @@ import java.sql.SQLException;
 
 public final class DatabaseConnection {
     private static final String URL = setting("BLOOD_DB_URL",
-            "jdbc:mysql://localhost:3306/emergency_blood_management?useSSL=true&serverTimezone=UTC");
+            "jdbc:mysql://localhost:3306/emergency_blood_management?serverTimezone=UTC");
 
     private DatabaseConnection() {
     }

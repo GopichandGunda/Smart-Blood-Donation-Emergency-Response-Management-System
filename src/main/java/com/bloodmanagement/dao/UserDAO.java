@@ -4,6 +4,7 @@ import com.bloodmanagement.enums.UserRole;
 import com.bloodmanagement.exception.DatabaseException;
 import com.bloodmanagement.model.User;
 import com.bloodmanagement.util.DatabaseConnection;
+import com.bloodmanagement.util.JdbcTransaction;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -78,16 +79,25 @@ public final class UserDAO {
     }
 
     public void setActive(long id, boolean active) {
-        try (Connection connection = DatabaseConnection.getConnection();
-             PreparedStatement statement = connection.prepareStatement("UPDATE users SET active = ? WHERE id = ?")) {
-            statement.setBoolean(1, active);
-            statement.setLong(2, id);
-            if (statement.executeUpdate() != 1) {
-                throw new DatabaseException("Account not found.", new SQLException("No user row updated."));
+        JdbcTransaction.execute("Account status change", connection -> {
+            try (PreparedStatement statement = connection.prepareStatement("UPDATE users SET active = ? WHERE id = ?")) {
+                statement.setBoolean(1, active);
+                statement.setLong(2, id);
+                if (statement.executeUpdate() != 1) {
+                    throw new IllegalArgumentException("Account not found.");
+                }
             }
-        } catch (SQLException exception) {
-            throw new DatabaseException("Could not update account status.", exception);
-        }
+            try (PreparedStatement donor = connection.prepareStatement("""
+                    UPDATE donors SET account_status = ?, available = CASE WHEN ? THEN available ELSE FALSE END
+                    WHERE user_id = ?
+                    """)) {
+                donor.setString(1, active ? "ACTIVE" : "INACTIVE");
+                donor.setBoolean(2, active);
+                donor.setLong(3, id);
+                donor.executeUpdate();
+            }
+            return null;
+        });
     }
 
     private User map(ResultSet result) throws SQLException {

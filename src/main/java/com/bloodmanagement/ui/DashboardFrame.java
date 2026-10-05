@@ -792,7 +792,7 @@ public final class DashboardFrame extends JFrame {
         if (account.id() == user.id()) {
             throw new IllegalArgumentException("You cannot deactivate the account you are currently using.");
         }
-        services.userAccounts.setActive(id, !account.active());
+        services.accounts.setActive(id, !account.active(), user.id());
         refreshCurrent(true);
     }
 

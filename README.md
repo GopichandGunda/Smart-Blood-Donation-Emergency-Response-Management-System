@@ -82,43 +82,58 @@ Matches are sorted by score. Emergency requests are ordered critical-first. Neit
 
 Requirements: JDK 17 and MySQL 8.0.16+. The included Maven Wrapper downloads the pinned Maven release when first used.
 
-1. Create the schema and optional sample hospital/blood-bank stock:
+1. Install or extract MySQL Server. On this Windows setup, the project scripts expect the official ZIP distribution in:
+
+   ```text
+   %LOCALAPPDATA%\Programs\MySQL-8.4.9\mysql-8.4.9-winx64
+   ```
+
+   For a different installation location, set `MYSQL_HOME` in PowerShell to the MySQL Server directory.
+
+2. Start the server in a terminal and leave that terminal open. The script initializes a local data directory on first run and binds MySQL to loopback only:
 
    ```powershell
-   Get-Content src\main\resources\database.sql | mysql -u root -p
-   Get-Content src\main\resources\sample-data.sql | mysql -u root -p emergency_blood_management
+   powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\start-local-mysql.ps1
    ```
 
-2. Create a dedicated MySQL application user. Choose a strong local password and do not commit it:
-
-   ```sql
-   CREATE USER 'blood_app'@'localhost' IDENTIFIED BY 'choose-a-strong-local-password';
-   GRANT SELECT, INSERT, UPDATE, DELETE ON emergency_blood_management.* TO 'blood_app'@'localhost';
-   ```
-
-3. Set connection variables in the PowerShell terminal from which the app will run:
+3. In a second terminal, set up the schema, sample hospital/blood-bank stock, and a least-privilege app account:
 
    ```powershell
-   $env:BLOOD_DB_URL = "jdbc:mysql://localhost:3306/emergency_blood_management?serverTimezone=UTC"
-   $env:BLOOD_DB_USER = "blood_app"
-   $env:BLOOD_DB_PASSWORD = Read-Host "Database password"
+   powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\setup-local-database.ps1
    ```
 
-   `BLOOD_DB_URL` can be set to a TLS-enabled URL appropriate to your MySQL deployment. The default URL can be overridden with this variable.
+   The setup changes MySQL's initially empty local root password, generates a random `blood_app` password, and stores both encrypted with Windows DPAPI for the current Windows account. Neither password is printed or stored in the repository.
 
-4. Create the first administrator through the secure terminal bootstrap (password entry is not echoed):
+4. Create the first administrator with secure, non-echoing password prompts:
+
+   ```powershell
+   powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\create-admin.ps1
+   ```
+
+   The Java bootstrap is also available directly if MySQL environment variables have already been configured:
 
    ```powershell
    .\mvnw.cmd exec:java "-Dexec.mainClass=com.bloodmanagement.util.BootstrapAdmin"
    ```
 
-   Run it in a real terminal (not a terminal that lacks secure console input). Administrators can then create blood-bank staff accounts in the Accounts screen. Donors may register from the sign-in screen.
+5. Run the application:
 
-5. Build, test, and launch:
+   ```powershell
+   powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\run-local-app.ps1
+   ```
+
+   Administrators can create blood-bank staff accounts in the Accounts screen. Donors may register from the sign-in screen. To use another deployment, set `BLOOD_DB_URL`, `BLOOD_DB_USER`, and `BLOOD_DB_PASSWORD`; credentials are never committed to source control.
+
+6. Build and test:
 
    ```powershell
    .\mvnw.cmd clean test package
-   .\mvnw.cmd exec:java
+   ```
+
+   The package phase also creates a runnable shaded JAR containing the JDBC driver. Set database environment variables before launching the JAR:
+
+   ```powershell
+   java -jar target\emergency-blood-request-donor-matching-1.0.0-SNAPSHOT.jar
    ```
 
 In VS Code, open this folder, set the same environment variables in the integrated PowerShell terminal, then run the commands above. Java extensions can also launch `com.bloodmanagement.Main` with the configured environment.
@@ -139,7 +154,13 @@ The sign-in screen below is captured from the running Java Swing application. Th
 .\mvnw.cmd test
 ```
 
-The unit tests do not need a live database. The MySQL-dependent application requires the schema and connection variables above.
+The unit tests do not need a live database. To run the MySQL workflow integration tests against the locally configured database, use:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\test.ps1
+```
+
+The integration tests register test donors, requests, and blood banks in the selected database. Use a disposable development database for integration tests, not production data.
 
 ## Security and privacy
 

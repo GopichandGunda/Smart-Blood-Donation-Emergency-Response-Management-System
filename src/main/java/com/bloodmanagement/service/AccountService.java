@@ -32,4 +32,10 @@ public final class AccountService {
             throw exception;
         }
     }
+
+    public void setActive(long accountId, boolean active, long actorId) {
+        users.setActive(accountId, active);
+        audit.record(actorId, active ? "ACCOUNT_ACTIVATED" : "ACCOUNT_DEACTIVATED",
+                "Changed account #" + accountId + " active status to " + active);
+    }
 }

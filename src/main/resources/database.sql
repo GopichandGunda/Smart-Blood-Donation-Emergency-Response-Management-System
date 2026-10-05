@@ -1,6 +1,6 @@
 CREATE DATABASE IF NOT EXISTS emergency_blood_management
     CHARACTER SET utf8mb4
-    COLLATE utf8mb4_0900_ai_ci;
+    COLLATE utf8mb4_unicode_ci;
 
 USE emergency_blood_management;
 SET default_storage_engine = InnoDB;
