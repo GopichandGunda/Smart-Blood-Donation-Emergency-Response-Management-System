@@ -127,6 +127,12 @@ In VS Code, open this folder, set the same environment variables in the integrat
 
 The sample script creates one example hospital, one example bank, and a small sample stock lot. It does **not** create login accounts or donor records. Create the first admin with the bootstrap command; then add hospital/bank records as needed. `sample-data.sql` is idempotent for its example rows.
 
+## Screenshot
+
+The sign-in screen below is captured from the running Java Swing application. The role-specific workspace appears after signing in with a configured database account.
+
+![Emergency Blood Management Swing sign-in screen](screenshots/login-screen.png)
+
 ## Tests
 
 ```powershell
