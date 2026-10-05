@@ -20,6 +20,15 @@ public enum BloodGroup {
         return displayName;
     }
 
+    public static BloodGroup fromDisplayName(String value) {
+        for (BloodGroup bloodGroup : values()) {
+            if (bloodGroup.displayName.equalsIgnoreCase(value)) {
+                return bloodGroup;
+            }
+        }
+        throw new IllegalArgumentException("Unsupported blood group: " + value);
+    }
+
     @Override
     public String toString() {
         return displayName;
